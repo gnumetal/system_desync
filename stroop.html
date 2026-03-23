@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SYS//DESYNC — Stroop Module</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Saira+Condensed:wght@700;900&display=swap');
+
+        :root {
+            /* Palette */
+            --void:    #060606;
+            --panel:   #121212;
+            --surface: #181818;
+            --border:  #252525;
+            --ghost:   #888888;
+            --white:   #d4d4d4;
+            --o:       #cc5500; /* Burnt Orange Accent */
+            
+            --test-red:    #FF0000;
+            --test-green:  #00FF00;
+            --test-blue:   #0000FF;
+            --test-yellow: #FFFF00;
+            --test-purple: #800080;
+            --test-orange: #FFA500;
+
+            --mono: 'Share Tech Mono', monospace;
+            --sans: 'Saira Condensed', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: var(--void); 
+            color: var(--white); 
+            font-family: var(--mono);
+            height: 100vh;
+            flex-direction: column;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Scanline Overlay */
+        body::after {
+            content: "";
+            position: fixed; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 4px, 4px 100%;
+            pointer-events: none; z-index: 1000;
+        }
+
+        #game-frame {
+            width: 900px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 40px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        /* Overlays */
+        .overlay-screen {
+            position: absolute;
+            inset: 0;
+            background: var(--panel);
+            z-index: 100;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .title {
+            font-family: var(--sans);
+            font-size: 48px;
+            color: var(--o);
+            margin-bottom: 20px;
+            border-left: 4px solid var(--o);
+            padding-left: 20px;
+            text-transform: uppercase;
+        }
+
+        .highlight-box {
+            background: var(--void);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .highlight-box h3 { color: var(--o); font-size: 12px; margin-bottom: 10px; letter-spacing: 2px; }
+
+        /* Game UI */
+        #timer-container { width: 100%; height: 4px; background: var(--void); margin-bottom: 20px; }
+        #timer-bar { width: 100%; height: 100%; background: var(--o); transition: width 0.1s linear; }
+
+        .system-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--o);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            font-size: 11px;
+            color: var(--o);
+            letter-spacing: 2px;
+        }
+
+        #stimulus-wrap {
+            height: 220px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+        }
+
+        #word-display { font-family: var(--sans); font-size: 130px; font-weight: 900; text-transform: uppercase; }
+
+        #options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn-option {
+            height: 70px;
+            border: 1px solid var(--border);
+            font-family: var(--mono);
+            font-size: 18px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.1s;
+        }
+
+        /* Replay Targeting Circle */
+        .correct-target {
+            outline: 8px solid var(--o);
+            outline-offset: 6px;
+            box-shadow: 0 0 30px var(--o);
+            z-index: 10;
+        }
+
+        .nav-btn {
+            background: var(--void);
+            color: var(--o);
+            border: 1px solid var(--o);
+            padding: 15px 30px;
+            cursor: pointer;
+            font-family: var(--mono);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .nav-btn:hover { background: var(--o); color: white; }
+        .nav-btn:disabled { opacity: 0.2; }
+
+        #footer-stats {
+            margin-top: 30px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border);
+        }
+        .stat-card { background: var(--void); padding: 15px; text-align: center; }
+        .stat-label { color: var(--ghost); font-size: 9px; display: block; margin-bottom: 5px; }
+        .stat-value { font-size: 20px; font-weight: bold; }
+        .accent { color: var(--o); }
+
+        /* Diagnosis overlay entrance animation */
+        @keyframes diagSlideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        #diagnosis-overlay { animation: diagSlideIn 0.4s ease both; }
+
+        #page-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--ghost);
+            line-height: 1.6;
+        }
+        #page-footer a {
+            color: var(--ghost);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        #page-footer a:hover {
+            color: var(--o);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-frame">
+        <div id="welcome-overlay" class="overlay-screen">
+            <h1 class="title">STROOP.exe//OldNerdyBastard</h1>
+            <p style="font-size: 14px; margin-bottom: 25px; line-height: 1.6; color: var(--ghost);">
+                This terminal is calibrated to measure cognitive interference. Ensure audio output is enabled for interference modules.
+            </p>
+            <div class="highlight-box">
+                <h3>MODULE: AUDITORY_CHAOS</h3>
+                <p style="font-size: 12px; color: var(--white);">
+                    WARNING: The system will broadcast deceptive color names via voice. 
+                    <br>Target: <b>VISUAL INK COLOR ONLY.</b>
+                </p>
+            </div>
+            <div class="highlight-box">
+                <h3>MODULE: SUBJECT_ANALYSIS</h3>
+                <p style="font-size: 12px; color: var(--white);">
+                    Errors will be captured. After testing is complete, the correct response will be shown highlighted with a <b>Targeting Reticle</b>.
+                </p>
+            </div>
+            <button class="nav-btn" onclick="startGame()">INITIALIZE_SYSTEM: BEGIN</button>
+        </div>
+
+        <div id="diagnosis-overlay" class="overlay-screen" style="display:none; justify-content:center;">
+            <div class="system-header">
+                <span>SYS//NEURAL_ANALYSIS</span>
+                <span id="diag-score-header">SCORE: 0</span>
+            </div>
+            <div style="text-align:center; margin-bottom: 24px;">
+                <div style="font-size:11px; letter-spacing:3px; color:var(--ghost); margin-bottom:8px;">DIAGNOSIS_CODE</div>
+                <div id="diag-code" style="font-family:var(--sans); font-size:52px; font-weight:900; color:var(--o); text-transform:uppercase; border-left: 4px solid var(--o); padding-left: 20px; text-align:left; margin-bottom:4px;">—</div>
+            </div>
+            <div class="highlight-box" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                <h3 id="diag-tier" style="font-size:13px; letter-spacing:3px; margin-bottom:12px;">—</h3>
+                <p id="diag-body" style="font-size:13px; color:var(--white); line-height:1.7;">—</p>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:1px; background:var(--border); margin: 20px 0;">
+                <div class="stat-card"><span class="stat-label">FINAL SCORE</span><span class="stat-value accent" id="diag-final-score">0</span></div>
+                <div class="stat-card"><span class="stat-label">ACCURACY</span><span class="stat-value" id="diag-acc">0%</span></div>
+                <div class="stat-card"><span class="stat-label">AVG LATENCY</span><span class="stat-value" id="diag-lat">0.00s</span></div>
+            </div>
+            <div style="border: 2px solid var(--o); padding: 16px 20px; text-align:center; margin-bottom: 20px; background: rgba(204,85,0,0.08);">
+                <span style="font-family:var(--sans); font-size:22px; font-weight:900; color:var(--o); letter-spacing:3px; text-transform:uppercase;">
+                    ▶ CLOSE THIS TO VIEW CORRECT RESPONSES ◀
+                </span>
+            </div>
+            <button class="nav-btn" style="width:100%; font-size:16px;" onclick="closeDiagnosis()">CLOSE // ENTER REPLAY MODE</button>
+        </div>
+
+        <div id="replay-overlay" class="overlay-screen" style="display:none;">
+            <div class="system-header">
+                <span>LOG//REPLAY_SESSION</span>
+                <span id="replay-index">ERROR 1 OF X</span>
+            </div>
+            <div id="replay-content"></div>
+            <div style="display:flex; justify-content: space-between; margin-top: 25px; align-items: center;">
+                <button class="nav-btn" id="prev-btn" onclick="changeReplay(-1)">PREV</button>
+                <div id="replay-reason" style="font-size: 11px; color: var(--o)">STATUS: TIMEOUT</div>
+                <button class="nav-btn" id="next-btn" onclick="changeReplay(1)">NEXT</button>
+            </div>
+            <button class="nav-btn" style="margin-top:20px;" onclick="location.reload()">RE-INITIALIZE</button>
+        </div>
+
+        <div id="timer-container"><div id="timer-bar"></div></div>
+        <div class="system-header">
+            <span>NODE: PATIENT_ANALYSIS</span>
+            <span id="trial-counter">TRIAL: 0/25</span>
+        </div>
+        <div id="stimulus-wrap">
+            <div id="word-display">STANDBY</div>
+        </div>
+        <div id="options-grid"></div>
+        <div id="footer-stats">
+            <div class="stat-card"><span class="stat-label">SYNC_RATE</span><span class="stat-value accent" id="stat-acc">0%</span></div>
+            <div class="stat-card"><span class="stat-label">ERRORS</span><span class="stat-value" id="stat-error">0</span></div>
+            <div class="stat-card"><span class="stat-label">LATENCY</span><span class="stat-value" id="stat-speed">0.00s</span></div>
+            <div class="stat-card"><span class="stat-label">SCORE</span><span class="stat-value accent" id="stat-score">0</span></div>
+        </div>
+    </div>
+
+    <div id="page-footer">
+        <p>© 2026 OldNerdyBastard. All rights reserved. No license is granted to use, copy, or modify this code.</p>
+        <p>
+            Inspired by | <a href="https://redbarrelsgames.com/games/the-outlast-trials/" target="_blank" rel="noopener noreferrer">The Outlast Trials :: Red Barrels Games</a>
+        </p>
+        <p>
+            For more information on the Stroop Effect, <a href="https://en.wikipedia.org/wiki/Stroop_effect" target="_blank" rel="noopener noreferrer">click here</a>
+        </p>
+    </div>
+
+    <script>
+        const TEST_COLORS = [
+            { name: 'RED', hex: '#FF0000', dark: false },
+            { name: 'GREEN', hex: '#00FF00', dark: true },
+            { name: 'BLUE', hex: '#0000FF', dark: false },
+            { name: 'YELLOW', hex: '#FFFF00', dark: true },
+            { name: 'PURPLE', hex: '#800080', dark: false },
+            { name: 'ORANGE', hex: '#FFA500', dark: true }
+        ];
+
+        let score = 0, trials = 0, correct = 0, incorrectCount = 0, totalLatency = 0;
+        let timerInterval, timeLeft, currentSnapshot;
+        let snapshots = [];
+        let currentReplayIdx = 0;
+
+        // Audio Logic
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTick() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.04);
+        }
+
+        // Cache voices once they are available
+        let cachedVoices = [];
+        function loadVoices() {
+            cachedVoices = window.speechSynthesis.getVoices();
+        }
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); // also try immediately (works in Firefox)
+
+        function speakColor() {
+            window.speechSynthesis.cancel(); // Stop any current speech
+            const voiceColor = TEST_COLORS[Math.floor(Math.random() * TEST_COLORS.length)].name;
+            const msg = new SpeechSynthesisUtterance(voiceColor);
+
+            // Use cached voices; re-fetch if cache is still empty
+            const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                msg.voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+            }
+            msg.rate = 1.2;
+            msg.pitch = 0.7;
+            window.speechSynthesis.speak(msg);
+        }
+
+        // Background music
+        const bgMusic = new Audio('onb_desync.mp3');
+        bgMusic.loop = true;
+        bgMusic.volume = 0.5;
+
+        function startGame() {
+            audioCtx.resume();
+            // Warm up
+            const warmUp = new SpeechSynthesisUtterance('.');
+            warmUp.volume = 0;
+            const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
+            if (voices.length > 0) warmUp.voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+            window.speechSynthesis.speak(warmUp);
+
+            bgMusic.play().catch(() => {});
+
+            document.getElementById('welcome-overlay').style.display = 'none';
+            nextTrial();
+        }
+
+        function generateButtons() {
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            let states = [];
+            TEST_COLORS.forEach(colorItem => {
+                const bg = TEST_COLORS[Math.floor(Math.random() * TEST_COLORS.length)];
+                let fg = TEST_COLORS[Math.floor(Math.random() * TEST_COLORS.length)];
+                while (fg.hex === bg.hex) fg = TEST_COLORS[Math.floor(Math.random() * TEST_COLORS.length)];
+
+                const btn = document.createElement('button');
+                btn.className = 'btn-option';
+                btn.innerText = colorItem.name;
+                btn.style.backgroundColor = bg.hex;
+                btn.style.color = bg.dark ? '#121212' : fg.hex;
+                btn.onclick = () => handleInput(colorItem.name);
+                grid.appendChild(btn);
+                states.push({ name: colorItem.name, bg: bg.hex, fg: btn.style.color });
+            });
+            return states;
+        }
+
+        function nextTrial() {
+            if (trials >= 25) return showReplay();
+            
+            const wordIdx = Math.floor(Math.random() * TEST_COLORS.length);
+            let colorIdx = Math.floor(Math.random() * TEST_COLORS.length);
+            while(colorIdx === wordIdx) colorIdx = Math.floor(Math.random() * TEST_COLORS.length);
+
+            const display = document.getElementById('word-display');
+            display.innerText = TEST_COLORS[wordIdx].name;
+            display.style.color = TEST_COLORS[colorIdx].hex;
+            
+            const btnStates = generateButtons();
+            currentSnapshot = {
+                word: display.innerText,
+                color: display.style.color,
+                correct: TEST_COLORS[colorIdx].name,
+                buttons: btnStates
+            };
+
+            speakColor();
+            clearInterval(timerInterval);
+            timeLeft = 5000;
+            
+            let lastTick = 50;
+            timerInterval = setInterval(() => {
+                timeLeft -= 100;
+                document.getElementById('timer-bar').style.width = (timeLeft / 5000) * 100 + '%';
+                
+                // Play tick / 500ms
+                if (Math.floor(timeLeft / 500) !== lastTick) {
+                    playTick();
+                    lastTick = Math.floor(timeLeft / 500);
+                }
+
+                if (timeLeft <= 0) handleInput("TIMEOUT");
+            }, 100);
+        }
+
+        function handleInput(choice) {
+            clearInterval(timerInterval);
+            window.speechSynthesis.cancel();
+            
+            const latency = (5000 - timeLeft) / 1000;
+            const isCorrect = choice === currentSnapshot.correct;
+            trials++;
+
+            if (isCorrect) {
+                correct++;
+                totalLatency += latency;
+                score += Math.max(10, Math.floor(timeLeft / 25));
+            } else {
+                incorrectCount++;
+                currentSnapshot.reason = (choice === "TIMEOUT") ? "TIMEOUT" : `INPUT: ${choice}`;
+                snapshots.push({...currentSnapshot});
+            }
+            updateStats();
+            nextTrial();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-acc').innerText = Math.round((correct / trials) * 100) + '%';
+            document.getElementById('stat-error').innerText = incorrectCount;
+            document.getElementById('trial-counter').innerText = `TRIAL: ${trials}/25`;
+            document.getElementById('stat-score').innerText = score;
+            const avg = correct > 0 ? (totalLatency / correct).toFixed(2) : "0.00";
+            document.getElementById('stat-speed').innerText = avg + 's';
+        }
+
+        const DIAGNOSES = [
+            {
+                minScore: 0, maxScore: 499,
+                code: 'SIGNAL_COLLAPSE',
+                tier: 'TIER 5 — CRITICAL INTERFERENCE',
+                body: 'Neural sync has failed. Cognitive channels are overwhelmed by chromatic noise. The auditory cortex is dominating visual processing pathways entirely. Recommend immediate recalibration and system reboot before next session.',
+                color: '#FF3333'
+            },
+            {
+                minScore: 500, maxScore: 1499,
+                code: 'SYNC_DEGRADED',
+                tier: 'TIER 4 — HIGH INTERFERENCE',
+                body: 'Significant lag detected between visual intake and motor response. The Stroop effect is exerting substantial load on executive function. Pattern recognition is operational but inhibitory control shows critical latency spikes.',
+                color: '#FF8800'
+            },
+            {
+                minScore: 1500, maxScore: 2499,
+                code: 'PARTIAL_LOCK',
+                tier: 'TIER 3 — MODERATE INTERFERENCE',
+                body: 'System is functional but interference modules are producing measurable disruption. Selective attention is online; however, conflict resolution between auditory and visual streams remains a bottleneck. Training will improve throughput.',
+                color: '#FFDD00'
+            },
+            {
+                minScore: 2500, maxScore: 3749,
+                code: 'NEURAL_STABLE',
+                tier: 'TIER 2 — LOW INTERFERENCE',
+                body: 'Strong cognitive filtration detected. Prefrontal override of distracting stimuli is operating efficiently. Minor latency anomalies remain — likely residual noise from auditory deception channels. System is nearing optimal calibration.',
+                color: '#88FF44'
+            },
+            {
+                minScore: 3750, maxScore: 5000,
+                code: 'FULL_SYNC',
+                tier: 'TIER 1 — ZERO INTERFERENCE',
+                body: 'Full neural synchronisation achieved. Auditory deception modules failed to penetrate executive control. Selective attention and inhibitory response are operating at peak efficiency. Patient is a prime specimen.',
+                color: '#00FFCC'
+            }
+        ];
+
+        function getDiagnosis(s) {
+            return DIAGNOSES.find(d => s >= d.minScore && s <= d.maxScore) || DIAGNOSES[0];
+        }
+
+        function showDiagnosis() {
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
+            const diag = getDiagnosis(score);
+            const acc = trials > 0 ? Math.round((correct / trials) * 100) : 0;
+            const avg = correct > 0 ? (totalLatency / correct).toFixed(2) : '0.00';
+
+            document.getElementById('diag-score-header').innerText = `SCORE: ${score}`;
+            document.getElementById('diag-code').innerText = diag.code;
+            document.getElementById('diag-code').style.color = diag.color;
+            document.getElementById('diag-code').style.borderLeftColor = diag.color;
+            document.getElementById('diag-tier').innerText = diag.tier;
+            document.getElementById('diag-tier').style.color = diag.color;
+            document.getElementById('diag-body').innerText = diag.body;
+            document.getElementById('diag-final-score').innerText = score;
+            document.getElementById('diag-acc').innerText = acc + '%';
+            document.getElementById('diag-lat').innerText = avg + 's';
+
+            document.getElementById('diagnosis-overlay').style.display = 'flex';
+        }
+
+        function closeDiagnosis() {
+            document.getElementById('diagnosis-overlay').style.display = 'none';
+            if (snapshots.length === 0) {
+                alert("PERFECT SYNC. NO ERRORS TO REPLAY. SESSION TERMINATED.");
+                location.reload();
+                return;
+            }
+            document.getElementById('replay-overlay').style.display = 'flex';
+            renderReplayFrame(0);
+        }
+
+        function showReplay() {
+            showDiagnosis();
+        }
+
+        function renderReplayFrame(idx) {
+            const snap = snapshots[idx];
+            const content = document.getElementById('replay-content');
+            content.innerHTML = `
+                <div id="stimulus-wrap"><div id="word-display" style="color:${snap.color}">${snap.word}</div></div>
+                <div id="options-grid"></div>
+            `;
+            const grid = content.querySelector('#options-grid');
+            snap.buttons.forEach(b => {
+                const btn = document.createElement('div');
+                btn.className = 'btn-option';
+                if (b.name === snap.correct) btn.classList.add('correct-target');
+                btn.innerText = b.name;
+                btn.style.backgroundColor = b.bg; btn.style.color = b.fg;
+                btn.style.display = 'flex'; btn.style.alignItems = 'center'; btn.style.justifyContent = 'center';
+                grid.appendChild(btn);
+            });
+            document.getElementById('replay-index').innerText = `ERROR ${idx + 1} OF ${snapshots.length}`;
+            document.getElementById('replay-reason').innerText = `STATUS: ${snap.reason} | EXPECTED: ${snap.correct}`;
+            document.getElementById('prev-btn').disabled = idx === 0;
+            document.getElementById('next-btn').disabled = idx === snapshots.length - 1;
+        }
+
+        function changeReplay(delta) {
+            currentReplayIdx += delta;
+            renderReplayFrame(currentReplayIdx);
+        }
+
+    </script>
+</body>
+</html>

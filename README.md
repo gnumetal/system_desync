@@ -5,8 +5,7 @@ an interactive Stroop test game
 > A browser-based Stroop interference test with auditory chaos, score diagnosis, and error replay.
 >
 > 
-### [► BEGIN EXAMINATION](https://github.com/gnumetal/system_desync/blob/main/stroop.html](https://gnumetal.github.io/system_desync/stroop.html)
-
+### [► BEGIN EXAMINATION](https://gnumetal.github.io/system_desync/stroop.html)
 ---
 
 ## What It Is

@@ -3,6 +3,9 @@ an interactive Stroop test game
 # UNSYNC//SYSTEM — STROOP_TEST
 
 > A browser-based Stroop interference test with auditory chaos, score diagnosis, and error replay.
+>
+> 
+### [► BEGIN EXAMINATION](https://github.com/gnumetal/system_desync/blob/main/stroop.html)
 
 ---
 

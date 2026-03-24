@@ -14,8 +14,9 @@
             --border:  #252525;
             --ghost:   #888888;
             --white:   #d4d4d4;
-            --o:       #cc5500; /* Burnt Orange Accent */
-            
+            --o:       #00A9A5; /* Muted Teal Accent */
+            --peach:   #FF7043; /* Orange Accent */
+
             --test-red:    #FF0000;
             --test-green:  #00FF00;
             --test-blue:   #0000FF;
@@ -48,15 +49,16 @@
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
                         linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
             background-size: 100% 4px, 4px 100%;
-            pointer-events: none; z-index: 1000;
+            pointer-events: none; z-index: 1;
         }
 
         #game-frame {
-            width: 900px;
+            width: 1100px;
             background: var(--panel);
             border: 1px solid var(--border);
             padding: 40px;
             position: relative;
+            z-index: 2;
             box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
@@ -93,7 +95,7 @@
 
         /* Game UI */
         #timer-container { width: 100%; height: 4px; background: var(--void); margin-bottom: 20px; }
-        #timer-bar { width: 100%; height: 100%; background: var(--o); transition: width 0.1s linear; }
+        #timer-bar { width: 100%; height: 100%; background: var(--peach); transition: width 0.1s linear; }
 
         .system-header {
             display: flex;
@@ -115,7 +117,7 @@
             border: 1px solid var(--border);
         }
 
-        #word-display { font-family: var(--sans); font-size: 130px; font-weight: 900; text-transform: uppercase; }
+        #word-display { font-family: var(--sans); font-size: 160px; font-weight: 900; text-transform: uppercase; }
 
         #options-grid {
             display: grid;
@@ -137,9 +139,9 @@
 
         /* Replay Targeting Circle */
         .correct-target {
-            outline: 8px solid var(--o);
+            outline: 8px solid var(--peach);
             outline-offset: 6px;
-            box-shadow: 0 0 30px var(--o);
+            box-shadow: 0 0 30px var(--peach);
             z-index: 10;
         }
 
@@ -154,7 +156,7 @@
             text-transform: uppercase;
         }
 
-        .nav-btn:hover { background: var(--o); color: white; }
+        .nav-btn:hover { background: var(--peach); color: var(--panel); }
         .nav-btn:disabled { opacity: 0.2; }
 
         #footer-stats {
@@ -165,6 +167,7 @@
         .stat-label { color: var(--ghost); font-size: 9px; display: block; margin-bottom: 5px; }
         .stat-value { font-size: 20px; font-weight: bold; }
         .accent { color: var(--o); }
+        #stat-score, #stat-acc, #diag-final-score { color: var(--peach); }
 
         /* Diagnosis overlay entrance animation */
         @keyframes diagSlideIn {
@@ -173,29 +176,85 @@
         }
         #diagnosis-overlay { animation: diagSlideIn 0.4s ease both; }
 
+        /* Glitch Effect */
+        @keyframes glitch-title {
+            0% { text-shadow: none; }
+            70% { text-shadow: none; }
+            71% { text-shadow: 0.8px 0 0 var(--peach), -0.8px 0 0 var(--test-blue); }
+            72% { text-shadow: none; }
+            98% { text-shadow: none; }
+            99% { text-shadow: 0.8px 0 0 var(--peach), -0.8px 0 0 var(--test-blue); }
+            100% { text-shadow: none; }
+        }
+
+        @keyframes glitch-word {
+            0% { transform: translate(0); text-shadow: none; }
+            2% { transform: translate(-2px, 1px); text-shadow: 2px -1px 0 var(--peach), -1px 2px 0 var(--test-blue); }
+            4% { transform: translate(0); text-shadow: none; }
+            40% { transform: translate(0); text-shadow: none; }
+            41% { transform: translate(1px, -2px); text-shadow: -2px 1px 0 var(--peach), 1px -2px 0 var(--test-blue); }
+            43% { transform: translate(0); text-shadow: none; }
+            100% { transform: translate(0); text-shadow: none; }
+        }
+
+        .glitch-effect.title { animation: glitch-title 5s infinite; }
+        .glitch-effect#diag-code { animation: glitch-title 7s infinite; }
+        .glitch-effect#word-display { animation: glitch-word 3s infinite; }
+
         #page-footer {
             margin-top: 20px;
             text-align: center;
-            font-size: 10px;
-            color: var(--ghost);
-            line-height: 1.6;
+            font-size: 12px;
+            color: #a0a0a0;
+            line-height: 1.8;
+            letter-spacing: 1px;
         }
         #page-footer a {
-            color: var(--ghost);
+            color: var(--white);
             text-decoration: none;
             transition: color 0.2s;
+            font-weight: bold;
         }
         #page-footer a:hover {
             color: var(--o);
             text-decoration: underline;
         }
+        #page-footer p:first-child {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        #background-artifacts {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+            user-select: none;
+            font-family: var(--mono);
+            color: rgba(0, 169, 165, 0.1); /* Base color for layers */
+        }
+        .parallax-layer {
+            position: absolute;
+            top: -10%; left: -10%;
+            width: 120%; height: 120%;
+            will-change: transform;
+            transition: transform 0.1s ease-out;
+            text-align: justify;
+            overflow: hidden;
+        }
+        .parallax-layer span {
+            transition: opacity 0.3s ease, color 0.3s ease;
+        }
     </style>
 </head>
 <body>
 
+    <div id="background-artifacts"></div>
+
     <div id="game-frame">
         <div id="welcome-overlay" class="overlay-screen">
-            <h1 class="title">STROOP.exe//OldNerdyBastard</h1>
+            <h1 class="title glitch-effect">STROOP.exe//OldNerdyBastard</h1>
             <p style="font-size: 14px; margin-bottom: 25px; line-height: 1.6; color: var(--ghost);">
                 This terminal is calibrated to measure cognitive interference. Ensure audio output is enabled for interference modules.
             </p>
@@ -222,19 +281,19 @@
             </div>
             <div style="text-align:center; margin-bottom: 24px;">
                 <div style="font-size:11px; letter-spacing:3px; color:var(--ghost); margin-bottom:8px;">DIAGNOSIS_CODE</div>
-                <div id="diag-code" style="font-family:var(--sans); font-size:52px; font-weight:900; color:var(--o); text-transform:uppercase; border-left: 4px solid var(--o); padding-left: 20px; text-align:left; margin-bottom:4px;">—</div>
+                <div id="diag-code" class="glitch-effect" style="font-family:var(--sans); font-size:52px; font-weight:900; color:var(--o); text-transform:uppercase; border-left: 4px solid var(--o); padding-left: 20px; text-align:left; margin-bottom:4px;">—</div>
             </div>
             <div class="highlight-box" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
                 <h3 id="diag-tier" style="font-size:13px; letter-spacing:3px; margin-bottom:12px;">—</h3>
                 <p id="diag-body" style="font-size:13px; color:var(--white); line-height:1.7;">—</p>
             </div>
             <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:1px; background:var(--border); margin: 20px 0;">
-                <div class="stat-card"><span class="stat-label">FINAL SCORE</span><span class="stat-value accent" id="diag-final-score">0</span></div>
+                <div class="stat-card"><span class="stat-label">FINAL SCORE</span><span class="stat-value" id="diag-final-score">0</span></div>
                 <div class="stat-card"><span class="stat-label">ACCURACY</span><span class="stat-value" id="diag-acc">0%</span></div>
                 <div class="stat-card"><span class="stat-label">AVG LATENCY</span><span class="stat-value" id="diag-lat">0.00s</span></div>
             </div>
-            <div style="border: 2px solid var(--o); padding: 16px 20px; text-align:center; margin-bottom: 20px; background: rgba(204,85,0,0.08);">
-                <span style="font-family:var(--sans); font-size:22px; font-weight:900; color:var(--o); letter-spacing:3px; text-transform:uppercase;">
+            <div style="border: 2px solid var(--peach); padding: 16px 20px; text-align:center; margin-bottom: 20px; background: rgba(255, 112, 67, 0.1);">
+                <span style="font-family:var(--sans); font-size:22px; font-weight:900; color:var(--peach); letter-spacing:3px; text-transform:uppercase;">
                     ▶ CLOSE THIS TO VIEW CORRECT RESPONSES ◀
                 </span>
             </div>
@@ -249,7 +308,7 @@
             <div id="replay-content"></div>
             <div style="display:flex; justify-content: space-between; margin-top: 25px; align-items: center;">
                 <button class="nav-btn" id="prev-btn" onclick="changeReplay(-1)">PREV</button>
-                <div id="replay-reason" style="font-size: 11px; color: var(--o)">STATUS: TIMEOUT</div>
+                <div id="replay-reason" style="font-size: 11px; color: var(--peach)">STATUS: TIMEOUT</div>
                 <button class="nav-btn" id="next-btn" onclick="changeReplay(1)">NEXT</button>
             </div>
             <button class="nav-btn" style="margin-top:20px;" onclick="location.reload()">RE-INITIALIZE</button>
@@ -261,7 +320,7 @@
             <span id="trial-counter">TRIAL: 0/25</span>
         </div>
         <div id="stimulus-wrap">
-            <div id="word-display">STANDBY</div>
+            <div id="word-display" class="glitch-effect">STANDBY</div>
         </div>
         <div id="options-grid"></div>
         <div id="footer-stats">
@@ -426,7 +485,14 @@
             if (isCorrect) {
                 correct++;
                 totalLatency += latency;
-                score += Math.max(10, Math.floor(timeLeft / 25));
+                let points = 0;
+                // No penalty if response is 2.5s or faster
+                if (latency <= 2.5) {
+                    points = 200; // Max points for a trial
+                } else {
+                    points = Math.max(10, Math.floor(timeLeft / 25));
+                }
+                score += points;
             } else {
                 incorrectCount++;
                 currentSnapshot.reason = (choice === "TIMEOUT") ? "TIMEOUT" : `INPUT: ${choice}`;
@@ -451,35 +517,35 @@
                 code: 'SIGNAL_COLLAPSE',
                 tier: 'TIER 5 — CRITICAL INTERFERENCE',
                 body: 'Neural sync has failed. Cognitive channels are overwhelmed by chromatic noise. The auditory cortex is dominating visual processing pathways entirely. Recommend immediate recalibration and system reboot before next session.',
-                color: '#FF3333'
+                color: '#FF5733' // Soft Red/Orange
             },
             {
                 minScore: 500, maxScore: 1499,
                 code: 'SYNC_DEGRADED',
                 tier: 'TIER 4 — HIGH INTERFERENCE',
                 body: 'Significant lag detected between visual intake and motor response. The Stroop effect is exerting substantial load on executive function. Pattern recognition is operational but inhibitory control shows critical latency spikes.',
-                color: '#FF8800'
+                color: '#FF7043' // Orange
             },
             {
                 minScore: 1500, maxScore: 2499,
                 code: 'PARTIAL_LOCK',
                 tier: 'TIER 3 — MODERATE INTERFERENCE',
                 body: 'System is functional but interference modules are producing measurable disruption. Selective attention is online; however, conflict resolution between auditory and visual streams remains a bottleneck. Training will improve throughput.',
-                color: '#FFDD00'
+                color: '#FFD166' // Yellow
             },
             {
                 minScore: 2500, maxScore: 3749,
                 code: 'NEURAL_STABLE',
                 tier: 'TIER 2 — LOW INTERFERENCE',
                 body: 'Strong cognitive filtration detected. Prefrontal override of distracting stimuli is operating efficiently. Minor latency anomalies remain — likely residual noise from auditory deception channels. System is nearing optimal calibration.',
-                color: '#88FF44'
+                color: '#66DDAA' // Minty Teal
             },
             {
                 minScore: 3750, maxScore: 5000,
                 code: 'FULL_SYNC',
                 tier: 'TIER 1 — ZERO INTERFERENCE',
                 body: 'Full neural synchronisation achieved. Auditory deception modules failed to penetrate executive control. Selective attention and inhibitory response are operating at peak efficiency. Patient is a prime specimen.',
-                color: '#00FFCC'
+                color: '#00A9A5' // Muted Teal
             }
         ];
 
@@ -550,6 +616,100 @@
             currentReplayIdx += delta;
             renderReplayFrame(currentReplayIdx);
         }
+
+        /* --- Background Parallax --- */
+        const ARTIFACT_CHARS = '█▓▒░田由甲申甴电甶男甸甹町画甼甽甾甿畀畁畂畃畄畅畆畇畈畉畊畋界畍甎畏畐畑ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let allGlyphSpans = [];
+        let glyphAnimationInterval = null;
+
+        function createParallaxLayers() {
+            const container = document.getElementById('background-artifacts');
+            if (!container) return;
+            container.innerHTML = ''; // Clear any previous content
+            allGlyphSpans = [];
+            if (glyphAnimationInterval) clearInterval(glyphAnimationInterval);
+
+            const layersConfig = [
+                { factor: 0.05, size: 14, opacity: 0.05 }, // Far
+                { factor: 0.15, size: 20, opacity: 0.07 }  // Close
+            ];
+
+            layersConfig.forEach(config => {
+                const layer = document.createElement('div');
+                layer.className = 'parallax-layer';
+                layer.dataset.factor = config.factor;
+                layer.style.fontSize = `${config.size}px`;
+                layer.style.color = `rgba(0, 169, 165, ${config.opacity})`;
+                layer.style.lineHeight = `${config.size * 1.4}px`;
+
+                // Calculate needed characters for a 120% view area
+                const vw = window.innerWidth * 1.2;
+                const vh = window.innerHeight * 1.2;
+                const charWidth = config.size * 0.6; // Estimated width of a mono character
+                const charHeight = config.size * 1.4;
+                const numChars = Math.ceil((vw / charWidth) * (vh / charHeight));
+
+                const fragment = document.createDocumentFragment();
+                for (let i = 0; i < numChars; i++) {
+                    const span = document.createElement('span');
+                    span.textContent = ARTIFACT_CHARS[Math.floor(Math.random() * ARTIFACT_CHARS.length)];
+                    fragment.appendChild(span);
+                    allGlyphSpans.push(span);
+                }
+                layer.appendChild(fragment);
+                container.appendChild(layer);
+            });
+
+            animateGlyphs();
+        }
+
+        function animateGlyphs() {
+            if (allGlyphSpans.length === 0) return;
+
+            glyphAnimationInterval = setInterval(() => {
+                const flickerCount = Math.max(10, Math.floor(allGlyphSpans.length / 300));
+
+                for (let i = 0; i < flickerCount; i++) {
+                    const span = allGlyphSpans[Math.floor(Math.random() * allGlyphSpans.length)];
+                    if (!span) continue;
+
+                    if (Math.random() > 0.95) {
+                        span.style.opacity = '0.8';
+                        span.style.color = 'var(--o)';
+                        span.textContent = ARTIFACT_CHARS[Math.floor(Math.random() * ARTIFACT_CHARS.length)];
+                    } else {
+                        span.style.opacity = ''; // Reset to inherit from parent
+                        span.style.color = ''; // Reset to inherit from parent
+                    }
+                }
+            }, 100);
+        }
+
+        function handleMouseMove(e) {
+            window.requestAnimationFrame(() => {
+                const layers = document.querySelectorAll('.parallax-layer');
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const mouseX = e.clientX - centerX;
+                const mouseY = e.clientY - centerY;
+
+                layers.forEach(layer => {
+                    const factor = layer.dataset.factor;
+                    const transX = -mouseX * factor;
+                    const transY = -mouseY * factor;
+                    layer.style.transform = `translate3d(${transX}px, ${transY}px, 0)`;
+                });
+            });
+        }
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(createParallaxLayers, 250);
+        });
+
+        window.addEventListener('mousemove', handleMouseMove);
+        createParallaxLayers();
 
     </script>
 </body>
